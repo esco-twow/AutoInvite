@@ -14,17 +14,20 @@ local DEFAULT_INV_MESSAGE = "1";
 
 local OPTION_DEBUG = "Debug";
 local OPTION_ENABLED = "Enabled";
+local OPTION_DISABLE_ON_LOGIN = "Disable_On_Login";
 local OPTION_MESSAGE = "Message";
 local OPTION_GUILD_ENABLED = "Guild_Enabled";
 local OPTION_WHISPER_ENABLED = "Whisper_Enabled";
-local OPTION_RAID = "Raid";
+local OPTION_RAID_ENABLED = "Raid";
 
 --------------------------------------------------------------------------------------------------
 -- Helper functions
 --------------------------------------------------------------------------------------------------
 
-function AutoInvite_ChatOptionStatus(option, text)
-    local command = string.lower(text)
+function AutoInvite_CommandOptionStatus(option, text, command)
+    if (command == nil) then
+        command = string.lower(text)
+    end
     AutoInvite_Print(text .. ": " .. AutoInvite_GetOptionBoolText(option));
     AutoInvite_Print(" - Change with /ai " .. command .. " [on | off]");
 end
@@ -60,7 +63,7 @@ function AutoInvite_Print(msg)
 end
 
 function AutoInvite_PrintDebug(msg)
-    local ok, local debug_enabled = pcall(AutoInvite_DebugEnabled);
+    local ok, debug_enabled = pcall(AutoInvite_DebugEnabled);
     if (not ok) then
         do return end;
     end
@@ -77,6 +80,7 @@ end
 
 function AutoInvite_OnLoad()
 	this:RegisterEvent("PLAYER_ENTERING_WORLD");
+	-- this:RegisterEvent("CHAT_MSG_WHISPER");
 
     SlashCmdList["AutoInvite"] = AutoInvite_Command;
     SLASH_AutoInvite1 = "/ainv";
@@ -89,13 +93,32 @@ function AutoInvite_OnEvent(event)
 
 	if (event == "PLAYER_ENTERING_WORLD") then
 		AutoInvite_Initialize();
-    elseif (event == "CHAT_MSG_GUILD" or event == "CHAT_MSG_WHISPER") then
+    elseif ((event == "CHAT_MSG_GUILD") or (event == "CHAT_MSG_WHISPER")) then
         AutoInvite_HandleChatMessage(arg1, arg2);
     end
 end
 
 function AutoInvite_HandleChatMessage(msg, msg_player)
     AutoInvite_PrintDebug(msg_player .. " - " .. msg);
+
+    if (string.lower(msg) ~= string.lower(AutoInvite_GetOption(OPTION_MESSAGE))) then
+        AutoInvite_PrintDebug("AutoInvite_HandleChatMessage early exit.");
+        do return end;
+    end
+
+    local num_party_members = GetNumPartyMembers();
+    if (AutoInvite_GetOption(OPTION_RAID_ENABLED) == 0) then
+        if ((IsPartyLeader() and num_party_members < 4) or (num_party_members == 0)) then
+            AutoInvite_PrintDebug("Inviting " .. msg_player);
+            InviteByName(msg_player);
+        end
+    else
+        if ((num_party_members == 0) or ((IsRaidLeader() or IsRaidOfficer()) and (num_party_members < 40))) then
+            AutoInvite_PrintDebug("Converting to raid and inviting " .. msg_player);
+            ConvertToRaid();
+            InviteByName(msg_player);
+        end
+    end
 end
 
 --------------------------------------------------------------------------------------------------
@@ -111,11 +134,16 @@ function AutoInvite_Initialize()
 	if (AutoInviteOptions[Realm][Player] == nil) then AutoInviteOptions[Realm][Player] = {} end;
 	if (AutoInviteOptions[Realm][Player][OPTION_DEBUG] == nil) then AutoInviteOptions[Realm][Player][OPTION_DEBUG] = 0 end;
 	if (AutoInviteOptions[Realm][Player][OPTION_ENABLED] == nil) then AutoInviteOptions[Realm][Player][OPTION_ENABLED] = 0 end;
+	if (AutoInviteOptions[Realm][Player][OPTION_DISABLE_ON_LOGIN] == nil) then AutoInviteOptions[Realm][Player][OPTION_DISABLE_ON_LOGIN] = 1 end;
 	if (AutoInviteOptions[Realm][Player][OPTION_MESSAGE] == nil) then AutoInviteOptions[Realm][Player][OPTION_MESSAGE] = DEFAULT_INV_MESSAGE end;
 	if (AutoInviteOptions[Realm][Player][OPTION_GUILD_ENABLED] == nil) then AutoInviteOptions[Realm][Player][OPTION_GUILD_ENABLED] = 0 end;
 	if (AutoInviteOptions[Realm][Player][OPTION_WHISPER_ENABLED] == nil) then AutoInviteOptions[Realm][Player][OPTION_WHISPER_ENABLED] = 0 end;
-	if (AutoInviteOptions[Realm][Player][OPTION_RAID] == nil) then AutoInviteOptions[Realm][Player][OPTION_RAID] = 0 end;
+	if (AutoInviteOptions[Realm][Player][OPTION_RAID_ENABLED] == nil) then AutoInviteOptions[Realm][Player][OPTION_RAID_ENABLED] = 0 end;
     AutoInvite_PrintDebug("AutoInvite_Initialize DONE");
+
+    if (AutoInvite_GetOption(OPTION_DISABLE_ON_LOGIN) == 1) then
+        AutoInvite_DisableOption(OPTION_ENABLED);
+    end
 
     AutoInvite_OptionsChanged();
 
@@ -135,9 +163,10 @@ function AutoInvite_Command(args)
         AutoInvite_Print("Auto Invite: " .. AutoInvite_GetOptionBoolText(OPTION_ENABLED));
         AutoInvite_Print(" - Change with /ai [on | off]");
 
-        AutoInvite_ChatOptionStatus(OPTION_GUILD_ENABLED, "Guild");
-
-        AutoInvite_ChatOptionStatus(OPTION_WHISPER_ENABLED, "Whisper");
+        AutoInvite_CommandOptionStatus(OPTION_GUILD_ENABLED, "Guild");
+        AutoInvite_CommandOptionStatus(OPTION_WHISPER_ENABLED, "Whisper");
+        AutoInvite_CommandOptionStatus(OPTION_RAID_ENABLED, "Raid");
+        AutoInvite_CommandOptionStatus(OPTION_DISABLE_ON_LOGIN, "Disable Auto Invite On Login", "login");
 
         AutoInvite_Print("Invite message: \"" .. AutoInviteOptions[Realm][Player][OPTION_MESSAGE] .. "\"");
         AutoInvite_Print(" - Change with /ai <message>");
@@ -150,7 +179,7 @@ function AutoInvite_Command(args)
         AutoInvite_Print("Auto Invite off.")
 
     elseif (args == "guild") then
-        AutoInvite_ChatOptionStatus(OPTION_GUILD_ENABLED, "Guild");
+        AutoInvite_CommandOptionStatus(OPTION_GUILD_ENABLED, "Guild");
     elseif (args == "guild on") then
         AutoInvite_EnableOption(OPTION_GUILD_ENABLED);
         AutoInvite_Print("Guild messages on.")
@@ -159,7 +188,7 @@ function AutoInvite_Command(args)
         AutoInvite_Print("Guild messages off.")
 
     elseif (args == "whisper") then
-        AutoInvite_ChatOptionStatus(OPTION_WHISPER_ENABLED, "Whisper");
+        AutoInvite_CommandOptionStatus(OPTION_WHISPER_ENABLED, "Whisper");
     elseif (args == "whisper on") then
         AutoInvite_EnableOption(OPTION_WHISPER_ENABLED);
         AutoInvite_Print("Whispers on.")
@@ -167,6 +196,24 @@ function AutoInvite_Command(args)
         AutoInvite_DisableOption(OPTION_WHISPER_ENABLED);
         AutoInvite_Print("Whispers off.")
     
+    elseif (args == "raid") then
+        AutoInvite_CommandOptionStatus(OPTION_RAID_ENABLED, "Raid");
+    elseif (args == "raid on") then
+        AutoInvite_EnableOption(OPTION_RAID_ENABLED);
+        AutoInvite_Print("Raid on.")
+    elseif (args == "raid off") then
+        AutoInvite_DisableOption(OPTION_RAID_ENABLED);
+        AutoInvite_Print("Raid off.")
+    
+    elseif (args == "login") then
+        AutoInvite_CommandOptionStatus(OPTION_DISABLE_ON_LOGIN, "Login");
+    elseif (args == "login on") then
+        AutoInvite_EnableOption(OPTION_DISABLE_ON_LOGIN);
+        AutoInvite_Print("Auto invite will be disabled on login.")
+    elseif (args == "login off") then
+        AutoInvite_DisableOption(OPTION_DISABLE_ON_LOGIN);
+        AutoInvite_Print("Auto invite will not be disabled on login.")
+
     elseif (args == "debug") then
         AutoInvite_Print("Debug: " .. AutoInvite_GetOptionBoolText(OPTION_DEBUG));
         AutoInvite_Print(" - Change with /ai debug [on | off]")
