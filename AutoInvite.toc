@@ -3,5 +3,5 @@
 ## Author: Esco
 ## Notes: Simple addon to allow auto invite via whisper or guild chat messages.
 ## Version: 0.1
-## SavedVariables: AutoInviteConfig
+## SavedVariables: AutoInviteOptions
 AutoInvite.xml
