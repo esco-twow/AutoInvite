@@ -3,11 +3,6 @@ AutoInviteOptions = {};
 local Realm;
 local Player;
 
--- local OUTPUT_HEADER = "|cFF51C878 AutoInvite|r ";
--- local OUTPUT_HEADER = "|cFF41A564 AutoInvite|r ";
--- local OUTPUT_HEADER = "|cFF5C9732 AutoInvite|r ";
--- local OUTPUT_HEADER = "|cFF7AC142 AutoInvite|r ";
--- local OUTPUT_HEADER = "|cFF3F7C2E AutoInvite|r ";
 local OUTPUT_HEADER = "|cFFCC00FF AutoInvite|r ";
 
 local DEFAULT_INV_MESSAGE = "1";
@@ -80,7 +75,6 @@ end
 
 function AutoInvite_OnLoad()
 	this:RegisterEvent("PLAYER_ENTERING_WORLD");
-	-- this:RegisterEvent("CHAT_MSG_WHISPER");
 
     SlashCmdList["AutoInvite"] = AutoInvite_Command;
     SLASH_AutoInvite1 = "/ainv";
