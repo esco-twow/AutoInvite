@@ -231,10 +231,10 @@ end
 function AutoInvite_OptionRegisterOrUnregister(option, event)
     if (AutoInvite_GetOption(option) == 1) then
         AutoInvite_PrintDebug("Registered event: " .. event);
-        this:RegisterEvent(event);
+        AutoInviteFrame:RegisterEvent(event);
     else
         AutoInvite_PrintDebug("Unregistered event: " .. event);
-        this:UnregisterEvent(event);
+        AutoInviteFrame:UnregisterEvent(event);
     end
 end
 
@@ -244,6 +244,6 @@ function AutoInvite_OptionsChanged()
         AutoInvite_OptionRegisterOrUnregister(OPTION_WHISPER_ENABLED, "CHAT_MSG_WHISPER");
     else
         AutoInvite_PrintDebug("Unregistered all events");
-        this:UnregisterAllEvents();
+        AutoInviteFrame:UnregisterAllEvents();
     end
 end
