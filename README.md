@@ -7,7 +7,7 @@ Currently only one invite message can be specified at a time, and is not case se
 ```
 /ai               - Configure, list commands
 /ai on            - Turn on auto invites
-/ai off           - Turn on auto invites
+/ai off           - Turn off auto invites
 /ai guild on      - Turn on auto invites for guild chat
 /ai guild off     - Turn off auto invites for guild chat
 /ai whisper on    - Turn on auto invites for whispers
@@ -15,7 +15,7 @@ Currently only one invite message can be specified at a time, and is not case se
 /ai raid on       - Convert group to raid when creating
 /ai raid off      - Don't convert group to raid when creating
 /ai login on      - Keep auto invites enabled whenever you log into the game (default)
-/ai login off     - Disable auto invite whenever you log into the game
+/ai login off     - Disable auto invites whenever you log into the game
 ```
 
 ## Setting the invite message
