@@ -202,10 +202,10 @@ function AutoInvite_Command(args)
     elseif (args == "login") then
         AutoInvite_CommandOptionStatus(OPTION_DISABLE_ON_LOGIN, "Login");
     elseif (args == "login on") then
-        AutoInvite_DisableOption(OPTION_DISABLE_ON_LOGIN);
+        AutoInvite_EnableOption(OPTION_DISABLE_ON_LOGIN);
         AutoInvite_Print("Auto invite will be disabled on login.")
     elseif (args == "login off") then
-        AutoInvite_EnableOption(OPTION_DISABLE_ON_LOGIN);
+        AutoInvite_DisableOption(OPTION_DISABLE_ON_LOGIN);
         AutoInvite_Print("Auto invite will not be disabled on login.")
 
     elseif (args == "debug") then
